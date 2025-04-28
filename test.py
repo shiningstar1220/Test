@@ -1,39 +1,54 @@
 import pandas as pd
-import json
 import matplotlib.pyplot as plt
+import json
+import numpy as np
 
-#Create time-series-results.csv
-def create_time_series():
-    # Open and load data from scores.json
-    with open('scores.json') as f:
-        data = json.load(f)
+# Load JSON files
+with open('scores.json') as f:
+    scores_data = json.load(f)['scores']
 
-    # Ensure data is accessed from the 'scores' key
-    scores_data = data.get('scores', [])
+with open('skills.json') as f:
+    skills_data = json.load(f)['skills']
+
+with open('possible_scores.json') as f:
+    possible_scores = json.load(f)['possible_scores']
+
+# Step 1: Order data by timestamp
+scores_df = pd.DataFrame(scores_data)
+scores_df['timestamp'] = pd.to_datetime(scores_df['timestamp'])
+
+# Convert 'score' column to numeric, forcing errors to NaN (this will handle non-numeric scores like 'cat')
+scores_df['score'] = pd.to_numeric(scores_df['score'], errors='coerce')
+
+# Sort by timestamp
+scores_df = scores_df.sort_values(by='timestamp', ascending=True)
+
+# Save time-series data to CSV
+scores_df.to_csv('time-series-results.csv', index=False)
+
+# Step 2: Create a 3-dimensional table of scores for each skill
+skills_df = pd.DataFrame(skills_data)
+skills_list = skills_df['skill'].tolist()
+
+# Initialize a dictionary to hold the results
+skill_results = []
+
+for skill in skills_list:
+    skill_data = scores_df[scores_df['skill'] == skill]
     
-    # Check if data is loaded as a list (it should be a list of dictionaries)
-    print("Data loaded from JSON:", type(scores_data))  # Check the type of data
+    # Count the number of records
+    count = len(skill_data)
     
-    # If it's not a list, raise an error
-    if not isinstance(scores_data, list):
-        raise ValueError("Data from scores.json is not in the expected list format.")
+    # Calculate the mean score (handle NaN or missing values)
+    mean_score = skill_data['score'].mean() if count > 0 else None
     
-    # Sort data by timestamp in ascending order (ensure timestamp is in datetime format)
-    scores_data_sorted = sorted(scores_data, key=lambda x: x['timestamp'])
+    # Append the results to the skill_results list
+    skill_results.append([skill, count, mean_score])
 
-    # Create DataFrame from sorted data
-    df = pd.DataFrame(scores_data_sorted)
-    
-    # Debug: Print a few rows to verify the data
-    print("Data to be written to CSV:")
-    print(df.head())
+# Step 3: Convert skill results into a DataFrame
+skill_results_df = pd.DataFrame(skill_results, columns=['skill', 'count', 'score_average'])
+skill_results_df = skill_results_df.sort_values(by='skill', ascending=True)
 
-    # Save to CSV
-    df.to_csv('time-series-results.csv', index=False)
-    print("time-series-results.csv created successfully.")
+# Save the results to CSV
+skill_results_df.to_csv('scores-results.csv', index=False)
 
-def main():
-    create_time_series()
-
-if __name__ == '__main__':
-    main()
