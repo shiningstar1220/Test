@@ -52,3 +52,15 @@ skill_results_df = skill_results_df.sort_values(by='skill', ascending=True)
 # Save the results to CSV
 skill_results_df.to_csv('scores-results.csv', index=False)
 
+# Step 4: Create a visualization
+fig, ax = plt.subplots(figsize=(10, 6))
+ax.bar(skill_results_df['skill'], skill_results_df['score_average'], color='skyblue')
+ax.set_xlabel('Skill')
+ax.set_ylabel('Average Score')
+ax.set_title('Average Score by Skill')
+
+# Save the plot to a PNG file
+plt.tight_layout()
+plt.savefig('scores-visualization-results.png')
+
+print("CSV and Visualization files are created!")
